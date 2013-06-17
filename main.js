@@ -307,7 +307,11 @@ function onDocumentReady()
 {
   var i;
   Math.TAU = Math.PI*2;
-  $.getScript('./globals.js').done(globalsLoaded);  
+  $.getScript('./moduleLoader.js').done(onModuleLoaderReady);  
+}
+function onModuleLoaderReady()
+{
+  app.moduleLoader.loadModule('input',globalsLoaded);
 }
 function globalsLoaded(){
   
