@@ -303,14 +303,12 @@ function cell(){
   };
 }
 
-function onDocumentReady()
-{
+function onDocumentReady(){
   var i;
   Math.TAU = Math.PI*2;
   $.getScript('./moduleLoader.js').done(onModuleLoaderReady);  
 }
-function onModuleLoaderReady()
-{
+function onModuleLoaderReady(){
   app.moduleLoader.loadModule('input',globalsLoaded);
 }
 function globalsLoaded(){
@@ -424,11 +422,7 @@ function globalsLoaded(){
   $("#toggleInner").click(hideInnerCells);
   
 	window.requestAnimationFrame(draw);
-  $('body').keydown(onKeyDown).keyup(onKeyUp);
-  $.getScript('./module.js').done(moduleLoaded);  
-}
-function moduleLoaded(){
-  //myModule.run(app);
+  $('body').keydown(onKeyDown).keyup(onKeyUp); 
 }
 
 function hideUpCells(event){
