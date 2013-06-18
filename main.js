@@ -421,8 +421,32 @@ function globalsLoaded(){
   $("#toggleDown").click(hideDownCells);
   $("#toggleInner").click(hideInnerCells);
   
-	window.requestAnimationFrame(draw);
-  $('body').keydown(onKeyDown).keyup(onKeyUp); 
+  $('body').keydown(app.input.onKeyDown).keyup(app.input.onKeyUp); 
+  
+  app.input.keys.left.down = function(){app.globals.keys.left.state = 1; refreshAxes();};
+  app.input.keys.right.down = function(){app.globals.keys.right.state = 1; refreshAxes();};
+  app.input.keys.up.down = function(){app.globals.keys.up.state = 1; refreshAxes();};
+  app.input.keys.down.down = function(){app.globals.keys.down.state = 1; refreshAxes();};
+  app.input.keys.w.down = function(){app.globals.keys.w.state = 1; refreshAxes();};
+  app.input.keys.a.down = function(){app.globals.keys.a.state = 1; refreshAxes();};
+  app.input.keys.s.down = function(){app.globals.keys.s.state = 1; refreshAxes();};
+  app.input.keys.d.down = function(){app.globals.keys.d.state = 1; refreshAxes();};
+  app.input.keys.e.down = function(){app.globals.keys.e.state = 1; refreshAxes();};
+  app.input.keys.q.down = function(){app.globals.keys.q.state = 1; refreshAxes();};
+  
+  app.input.keys.left.up = function(){app.globals.keys.left.state = 0; refreshAxes();};
+  app.input.keys.right.up = function(){app.globals.keys.right.state = 0; refreshAxes();};
+  app.input.keys.up.up = function(){app.globals.keys.up.state = 0; refreshAxes();};
+  app.input.keys.down.up = function(){app.globals.keys.down.state = 0; refreshAxes();};
+  app.input.keys.w.up = function(){app.globals.keys.w.state = 0; refreshAxes();};
+  app.input.keys.a.up = function(){app.globals.keys.a.state = 0; refreshAxes();};
+  app.input.keys.s.up = function(){app.globals.keys.s.state = 0; refreshAxes();};
+  app.input.keys.d.up = function(){app.globals.keys.d.state = 0; refreshAxes();};
+  app.input.keys.e.up = function(){app.globals.keys.e.state = 0; refreshAxes();};
+  app.input.keys.q.up = function(){app.globals.keys.q.state = 0; refreshAxes();};
+  
+  
+  window.requestAnimationFrame(draw);
 }
 
 function hideUpCells(event){
@@ -469,41 +493,12 @@ function showInnerCells(event){
   }
   $('#toggleInner').click(hideInnerCells).addClass("lit");
 }
-
-function onKeyDown(event){
-  var key = event.which;
-  if(key == app.globals.keys.left.code){app.globals.keys.left.state = 1; refreshAxes();}
-  if(key == app.globals.keys.right.code){app.globals.keys.right.state = 1; refreshAxes();}
-  if(key == app.globals.keys.up.code){app.globals.keys.up.state = 1; refreshAxes();}
-  if(key == app.globals.keys.down.code){app.globals.keys.down.state = 1; refreshAxes();}
-  if(key == app.globals.keys.w.code){app.globals.keys.w.state = 1; refreshAxes();}
-  if(key == app.globals.keys.a.code){app.globals.keys.a.state = 1; refreshAxes();}
-  if(key == app.globals.keys.s.code){app.globals.keys.s.state = 1; refreshAxes();}
-  if(key == app.globals.keys.d.code){app.globals.keys.d.state = 1; refreshAxes();}
-  if(key == app.globals.keys.e.code){app.globals.keys.e.state = 1; refreshAxes();}
-  if(key == app.globals.keys.q.code){app.globals.keys.q.state = 1; refreshAxes();}
-  event.stopImmediatePropagation();
-}
-function onKeyUp(event){
-  var key = event.which;
-  if(key == app.globals.keys.left.code){app.globals.keys.left.state = 0; refreshAxes();}
-  if(key == app.globals.keys.right.code){app.globals.keys.right.state = 0; refreshAxes();}
-  if(key == app.globals.keys.up.code){app.globals.keys.up.state = 0; refreshAxes();}
-  if(key == app.globals.keys.down.code){app.globals.keys.down.state = 0; refreshAxes();}
-  if(key == app.globals.keys.w.code){app.globals.keys.w.state = 0; refreshAxes();}
-  if(key == app.globals.keys.a.code){app.globals.keys.a.state = 0; refreshAxes();}
-  if(key == app.globals.keys.s.code){app.globals.keys.s.state = 0; refreshAxes();}
-  if(key == app.globals.keys.d.code){app.globals.keys.d.state = 0; refreshAxes();}
-  if(key == app.globals.keys.e.code){app.globals.keys.e.state = 0; refreshAxes();}
-  if(key == app.globals.keys.q.code){app.globals.keys.q.state = 0; refreshAxes();}
-  event.stopPropagation();
-}
 function refreshAxes(){
-  app.globals.axes.X1 = app.globals.keys.d.state - app.globals.keys.a.state;
-  app.globals.axes.Y1 = app.globals.keys.w.state - app.globals.keys.s.state;
-  app.globals.axes.X2 = app.globals.keys.right.state - app.globals.keys.left.state;
-  app.globals.axes.Y2 = app.globals.keys.up.state - app.globals.keys.down.state;
-  app.globals.axes.Z1 = app.globals.keys.e.state - app.globals.keys.q.state;
+  app.input.axes.X1 = app.input.keys.d.state - app.input.keys.a.state;
+  app.input.axes.Y1 = app.input.keys.w.state - app.input.keys.s.state;
+  app.input.axes.X2 = app.input.keys.right.state - app.input.keys.left.state;
+  app.input.axes.Y2 = app.input.keys.up.state - app.input.keys.down.state;
+  app.input.axes.Z1 = app.input.keys.e.state - app.input.keys.q.state;
 }
 function tabulateMatrix(mat){
   var str = "<table><tr>";
@@ -535,11 +530,11 @@ function matrixUp(mat){
 function draw(){
   $('#output').text("");
   var camMat = new THREE.Matrix4().getInverse(app.globals.camera.matrix.clone().transpose());
-  app.globals.cameraRig.translateOnAxis(new THREE.Vector3(0,0,1).applyMatrix4(camMat),(-app.globals.axes.Y1*0.1));
-  app.globals.cameraRig.translateOnAxis(new THREE.Vector3(1,0,0).applyMatrix4(camMat),(app.globals.axes.X1*0.1));
-  app.globals.cameraRig.translateOnAxis(new THREE.Vector3(0,1,0), app.globals.axes.Z1 * 0.1);
-  app.globals.cameraRig.rotateOnAxis(new THREE.Vector3(0,1,0), -app.globals.axes.X2*0.02); //object space
-  app.globals.camera.rotateOnAxis(new THREE.Vector3(1,0,0), app.globals.axes.Y2*0.01);
+  app.globals.cameraRig.translateOnAxis(new THREE.Vector3(0,0,1).applyMatrix4(camMat),(-app.input.axes.Y1*0.1));
+  app.globals.cameraRig.translateOnAxis(new THREE.Vector3(1,0,0).applyMatrix4(camMat),(app.input.axes.X1*0.1));
+  app.globals.cameraRig.translateOnAxis(new THREE.Vector3(0,1,0), app.input.axes.Z1 * 0.1);
+  app.globals.cameraRig.rotateOnAxis(new THREE.Vector3(0,1,0), -app.input.axes.X2*0.02); //object space
+  app.globals.camera.rotateOnAxis(new THREE.Vector3(1,0,0), app.input.axes.Y2*0.01);
   for(var i in app.globals.trace)
   {
     var str = (app.globals.trace[i]());

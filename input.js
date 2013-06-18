@@ -19,5 +19,31 @@ app.input = {
     Y1:0,
     Y2:0,
     Z1:0
+  },
+  onKeyDown:function(event){
+    var downKey = event.which;
+    for(var i in app.input.keys){
+      var key = app.input.keys[i];
+      if(downKey == key.code){
+        key.state = 1;
+        if(key.down){
+          key.down();
+        }
+      }
+    }
+    event.stopImmediatePropagation();
+  },
+  onKeyUp:function(event){
+    var upKey = event.which;
+    for(var i in app.input.keys){
+      var key = app.input.keys[i];
+      if(upKey == key.code){
+        key.state = 0;
+        if(key.up){
+          key.up();
+        }
+      }
+    }
+    event.stopImmediatePropagation();
   }
 };
