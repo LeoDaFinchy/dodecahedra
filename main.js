@@ -1,6 +1,5 @@
 
 var THREE = THREE;
-//var globals = globals;
 var app = app || {VERSION:0.1};
 
 var world = {
@@ -304,26 +303,26 @@ function cell(){
 }
 
 function onDocumentReady(){
-  var i;
   Math.TAU = Math.PI*2;
   $.getScript('./moduleLoader.js').done(onModuleLoaderReady);  
 }
 function onModuleLoaderReady(){
-  app.moduleLoader.loadModule('input',globalsLoaded);
+  app.moduleLoader.loadModule('input', globalsComplete);
 }
-function globalsLoaded(){
+function globalsComplete(){
   
   app.globals.init();
+  
   var geom = new THREE.SphereGeometry(0.1,8,4);
   var mat = new THREE.MeshLambertMaterial();
   world.createNew({x:3,y:3,z:3});
   var pointLight = new THREE.DirectionalLight(0xffffff);
   var ambLight = new THREE.AmbientLight(0x001122);
   
-	// set its position
-	pointLight.position.x = 50;
-	pointLight.position.y = 50;
-    pointLight.position.z = 50;
+  // set its position
+  pointLight.position.x = 50;
+  pointLight.position.y = 50;
+  pointLight.position.z = 50;
   
   app.globals.cameraRig.position = (new THREE.Vector3(0,2,10));
   

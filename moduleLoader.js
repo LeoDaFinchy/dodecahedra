@@ -16,16 +16,21 @@ app.moduleLoader = {
   },
   loadModule:function(name, callback){
     console.log("loading "+name+"...");
-    var pre = [];
+    var loaded = $.when();
     for(var i in this.menu[name].prerequisites)
     {
-      pre.push(this.loadModule(this.menu[name].prerequisites[i]));
+      loaded = $.when(loaded, this.loadModule(this.menu[name].prerequisites[i]));
     }
-    return $.when(pre, $.getScript(this.menu[name].url))
+    loaded = $.when(loaded, $.getScript(this.menu[name].url))
     .done(callback, function(){
       console.log("loaded "+name+"...");
-      this.menu[name].loaded = true;
+      app.moduleLoader.menu[name].loaded = true;
     })
-    .promise();
+    .fail(function()
+    {
+      console.log("failed to load "+name);
+    });
+    
+    return loaded;
   }
 };
