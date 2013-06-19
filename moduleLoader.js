@@ -10,7 +10,13 @@ app.moduleLoader = {
     input:{
       name:'input',
       url:'./input.js',
-      prerequisites:['globals'],
+      prerequisites:[],
+      loaded:false
+    },
+    monitor:{
+      name:'monitor',
+      url:'./monitor.js',
+      prerequisites:[],
       loaded:false
     }
   },

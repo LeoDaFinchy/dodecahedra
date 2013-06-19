@@ -30,7 +30,5 @@ app.globals = {
     
     this.renderer.setSize(this.width, this.height);
     $('#container').append(this.renderer.domElement);
-    this.trace.push(function(){return tabulateMatrix(app.globals.camera.matrixWorld);});
-  },
-  trace:[]
+  }
 };

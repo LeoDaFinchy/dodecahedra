@@ -307,9 +307,15 @@ function onDocumentReady(){
   $.getScript('./moduleLoader.js').done(onModuleLoaderReady);  
 }
 function onModuleLoaderReady(){
-  app.moduleLoader.loadModule('input', globalsComplete);
+  app.moduleLoader.loadModule('input', inputLoaded);
 }
-function globalsComplete(){
+function inputLoaded(){
+  app.moduleLoader.loadModule('globals', globalsLoaded);
+}
+function globalsLoaded(){
+  app.moduleLoader.loadModule('monitor', monitorLoaded);
+}
+function monitorLoaded(){
   
   app.globals.init();
   
@@ -416,11 +422,12 @@ function globalsComplete(){
   app.globals.scene.add(pointLight);
   app.globals.scene.add(ambLight);
   
-  app.globals.trace.push(function(){return "X1:"+app.input.axes.X1;});
-  app.globals.trace.push(function(){return "Y1:"+app.input.axes.Y1;});
-  app.globals.trace.push(function(){return "X2:"+app.input.axes.X2;});
-  app.globals.trace.push(function(){return "Y2:"+app.input.axes.Y2;});
-  app.globals.trace.push(function(){return "Z1:"+app.input.axes.Z1;});
+  app.monitor.trace.push(function(){return "X1:"+app.input.axes.X1;});
+  app.monitor.trace.push(function(){return "Y1:"+app.input.axes.Y1;});
+  app.monitor.trace.push(function(){return "X2:"+app.input.axes.X2;});
+  app.monitor.trace.push(function(){return "Y2:"+app.input.axes.Y2;});
+  app.monitor.trace.push(function(){return "Z1:"+app.input.axes.Z1;});
+  app.monitor.trace.push(function(){return app.monitor.tabulateMatrix(app.globals.camera.matrixWorld);});
   
   $("#toggleUp").click(hideUpCells);
   $("#toggleDown").click(hideDownCells);
@@ -505,30 +512,6 @@ function refreshAxes(){
   app.input.axes.Y2 = app.input.keys.up.state - app.input.keys.down.state;
   app.input.axes.Z1 = app.input.keys.e.state - app.input.keys.q.state;
 }
-function tabulateMatrix(mat){
-  var str = "<table><tr>";
-  str += "<td>"+mat.elements[0]+"</td>";
-  str += "<td>"+mat.elements[1]+"</td>";
-  str += "<td>"+mat.elements[2]+"</td>";
-  str += "<td>"+mat.elements[3]+"</td>";
-  str += "</tr><tr>";
-  str += "<td>"+mat.elements[4]+"</td>";
-  str += "<td>"+mat.elements[5]+"</td>";
-  str += "<td>"+mat.elements[6]+"</td>";
-  str += "<td>"+mat.elements[7]+"</td>";
-  str += "</tr><tr>";
-  str += "<td>"+mat.elements[8]+"</td>";
-  str += "<td>"+mat.elements[9]+"</td>";
-  str += "<td>"+mat.elements[10]+"</td>";
-  str += "<td>"+mat.elements[11]+"</td>";
-  str += "</tr><tr>";
-  str += "<td>"+mat.elements[12]+"</td>";
-  str += "<td>"+mat.elements[13]+"</td>";
-  str += "<td>"+mat.elements[14]+"</td>";
-  str += "<td>"+mat.elements[15]+"</td>";
-  str += "</tr></table>";
-  return str;
-}
 function matrixUp(mat){
   return new THREE.Vector3(0,1,0).applyMatrix3(mat);
 }
@@ -540,9 +523,9 @@ function draw(){
   app.globals.cameraRig.translateOnAxis(new THREE.Vector3(0,1,0), app.input.axes.Z1 * 0.1);
   app.globals.cameraRig.rotateOnAxis(new THREE.Vector3(0,1,0), -app.input.axes.X2*0.02); //object space
   app.globals.camera.rotateOnAxis(new THREE.Vector3(1,0,0), app.input.axes.Y2*0.01);
-  for(var i in app.globals.trace)
+  for(var i in app.monitor.trace)
   {
-    var str = (app.globals.trace[i]());
+    var str = (app.monitor.trace[i]());
     $('#output').append("<div>"+str+"</div>");
   }
   app.globals.renderer.render(app.globals.scene,app.globals.camera);
