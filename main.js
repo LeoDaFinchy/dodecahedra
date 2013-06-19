@@ -428,27 +428,27 @@ function globalsComplete(){
   
   $('body').keydown(app.input.onKeyDown).keyup(app.input.onKeyUp); 
   
-  app.input.keys.left.down = function(){app.globals.keys.left.state = 1; refreshAxes();};
-  app.input.keys.right.down = function(){app.globals.keys.right.state = 1; refreshAxes();};
-  app.input.keys.up.down = function(){app.globals.keys.up.state = 1; refreshAxes();};
-  app.input.keys.down.down = function(){app.globals.keys.down.state = 1; refreshAxes();};
-  app.input.keys.w.down = function(){app.globals.keys.w.state = 1; refreshAxes();};
-  app.input.keys.a.down = function(){app.globals.keys.a.state = 1; refreshAxes();};
-  app.input.keys.s.down = function(){app.globals.keys.s.state = 1; refreshAxes();};
-  app.input.keys.d.down = function(){app.globals.keys.d.state = 1; refreshAxes();};
-  app.input.keys.e.down = function(){app.globals.keys.e.state = 1; refreshAxes();};
-  app.input.keys.q.down = function(){app.globals.keys.q.state = 1; refreshAxes();};
+  app.input.keys.left.down = function(){app.input.keys.left.state = 1; refreshAxes();};
+  app.input.keys.right.down = function(){app.input.keys.right.state = 1; refreshAxes();};
+  app.input.keys.up.down = function(){app.input.keys.up.state = 1; refreshAxes();};
+  app.input.keys.down.down = function(){app.input.keys.down.state = 1; refreshAxes();};
+  app.input.keys.w.down = function(){app.input.keys.w.state = 1; refreshAxes();};
+  app.input.keys.a.down = function(){app.input.keys.a.state = 1; refreshAxes();};
+  app.input.keys.s.down = function(){app.input.keys.s.state = 1; refreshAxes();};
+  app.input.keys.d.down = function(){app.input.keys.d.state = 1; refreshAxes();};
+  app.input.keys.e.down = function(){app.input.keys.e.state = 1; refreshAxes();};
+  app.input.keys.q.down = function(){app.input.keys.q.state = 1; refreshAxes();};
   
-  app.input.keys.left.up = function(){app.globals.keys.left.state = 0; refreshAxes();};
-  app.input.keys.right.up = function(){app.globals.keys.right.state = 0; refreshAxes();};
-  app.input.keys.up.up = function(){app.globals.keys.up.state = 0; refreshAxes();};
-  app.input.keys.down.up = function(){app.globals.keys.down.state = 0; refreshAxes();};
-  app.input.keys.w.up = function(){app.globals.keys.w.state = 0; refreshAxes();};
-  app.input.keys.a.up = function(){app.globals.keys.a.state = 0; refreshAxes();};
-  app.input.keys.s.up = function(){app.globals.keys.s.state = 0; refreshAxes();};
-  app.input.keys.d.up = function(){app.globals.keys.d.state = 0; refreshAxes();};
-  app.input.keys.e.up = function(){app.globals.keys.e.state = 0; refreshAxes();};
-  app.input.keys.q.up = function(){app.globals.keys.q.state = 0; refreshAxes();};
+  app.input.keys.left.up = function(){app.input.keys.left.state = 0; refreshAxes();};
+  app.input.keys.right.up = function(){app.input.keys.right.state = 0; refreshAxes();};
+  app.input.keys.up.up = function(){app.input.keys.up.state = 0; refreshAxes();};
+  app.input.keys.down.up = function(){app.input.keys.down.state = 0; refreshAxes();};
+  app.input.keys.w.up = function(){app.input.keys.w.state = 0; refreshAxes();};
+  app.input.keys.a.up = function(){app.input.keys.a.state = 0; refreshAxes();};
+  app.input.keys.s.up = function(){app.input.keys.s.state = 0; refreshAxes();};
+  app.input.keys.d.up = function(){app.input.keys.d.state = 0; refreshAxes();};
+  app.input.keys.e.up = function(){app.input.keys.e.state = 0; refreshAxes();};
+  app.input.keys.q.up = function(){app.input.keys.q.state = 0; refreshAxes();};
   
   
   window.requestAnimationFrame(draw);
