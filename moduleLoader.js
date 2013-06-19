@@ -27,15 +27,22 @@ app.moduleLoader = {
     {
       loaded = $.when(loaded, this.loadModule(this.menu[name].prerequisites[i]));
     }
-    loaded = $.when(loaded, $.getScript(this.menu[name].url))
-    .done(callback, function(){
-      console.log("loaded "+name+"...");
-      app.moduleLoader.menu[name].loaded = true;
-    })
-    .fail(function()
+    if(this.menu[name].loaded)
     {
-      console.log("failed to load "+name);
-    });
+      console.log(name+" already loaded");
+    }
+    else
+    {
+      loaded = $.when(loaded, $.getScript(this.menu[name].url))
+      .done(function(){
+        console.log(name+" loaded");
+        app.moduleLoader.menu[name].loaded = true;
+      }, callback)
+      .fail(function()
+      {
+        console.log("failed to load "+name);
+      });
+    }
     
     return loaded;
   }
