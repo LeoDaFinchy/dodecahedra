@@ -416,6 +416,12 @@ function globalsComplete(){
   app.globals.scene.add(pointLight);
   app.globals.scene.add(ambLight);
   
+  app.globals.trace.push(function(){return "X1:"+app.input.axes.X1;});
+  app.globals.trace.push(function(){return "Y1:"+app.input.axes.Y1;});
+  app.globals.trace.push(function(){return "X2:"+app.input.axes.X2;});
+  app.globals.trace.push(function(){return "Y2:"+app.input.axes.Y2;});
+  app.globals.trace.push(function(){return "Z1:"+app.input.axes.Z1;});
+  
   $("#toggleUp").click(hideUpCells);
   $("#toggleDown").click(hideDownCells);
   $("#toggleInner").click(hideInnerCells);

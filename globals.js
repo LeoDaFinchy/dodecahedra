@@ -30,13 +30,7 @@ app.globals = {
     
     this.renderer.setSize(this.width, this.height);
     $('#container').append(this.renderer.domElement);
-    
     this.trace.push(function(){return tabulateMatrix(app.globals.camera.matrixWorld);});
-    this.trace.push(function(){return "X1:"+app.globals.axes.X1;});
-    this.trace.push(function(){return "Y1:"+app.globals.axes.Y1;});
-    this.trace.push(function(){return "X2:"+app.globals.axes.X2;});
-    this.trace.push(function(){return "Y2:"+app.globals.axes.Y2;});
-    this.trace.push(function(){return "Z1:"+app.globals.axes.Z1;});
   },
   trace:[]
 };
