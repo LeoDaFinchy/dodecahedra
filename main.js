@@ -307,15 +307,9 @@ function onDocumentReady(){
   $.getScript('./moduleLoader.js').done(onModuleLoaderReady);  
 }
 function onModuleLoaderReady(){
-  app.moduleLoader.loadModule('input', inputLoaded);
+  app.moduleLoader.loadModule('default', run);
 }
-function inputLoaded(){
-  app.moduleLoader.loadModule('globals', globalsLoaded);
-}
-function globalsLoaded(){
-  app.moduleLoader.loadModule('monitor', monitorLoaded);
-}
-function monitorLoaded(){
+function run(){
   
   app.globals.init();
   

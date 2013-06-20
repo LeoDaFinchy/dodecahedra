@@ -18,22 +18,35 @@ app.moduleLoader = {
       url:'./monitor.js',
       prerequisites:[],
       loaded:false
+    },
+    default:{
+      name:'default',
+      prerequisites:[
+        'globals',
+        'input',
+        'monitor'
+      ],
+      loaded:false
     }
   },
   loadModule:function(name, callback){
-    console.log("loading "+name+"...");
     var loaded = $.when();
-    for(var i in this.menu[name].prerequisites)
-    {
-      loaded = $.when(loaded, this.loadModule(this.menu[name].prerequisites[i]));
-    }
     if(this.menu[name].loaded)
     {
       console.log(name+" already loaded");
     }
     else
     {
-      loaded = $.when(loaded, $.getScript(this.menu[name].url))
+      if(!this.menu[name].url){console.log("loading module pack "+name);}
+      for(var i in this.menu[name].prerequisites)
+      {
+        loaded = $.when(loaded, this.loadModule(this.menu[name].prerequisites[i]));
+      }
+      if(this.menu[name].url)
+      {
+        console.log("loading "+name+"...");
+        loaded = $.when(loaded, $.getScript(this.menu[name].url));
+      }
     }
     loaded.done(function(){
       console.log(name+" loaded");
