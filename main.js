@@ -522,7 +522,12 @@ function draw(){
     var str = (app.monitor.trace[i]());
     $('#output').append("<div>"+str+"</div>");
   }
-  app.globals.renderer.render(app.globals.scene,app.globals.camera);
+  for(var v in app.lens.viewports)
+  {
+    app.lens.setRendererToPort(app.globals.renderer,v);
+    app.lens.setCamToPort(app.globals.camera,v);
+    app.globals.renderer.render(app.globals.scene,app.globals.camera);
+  }
 	window.requestAnimationFrame(draw);
 }
 $(document).ready(onDocumentReady);

@@ -1,7 +1,6 @@
 body{margin:0;}
 canvas{
   border:black solid 1px;
-	background-color:#6699cc;
 }
 #output{
   position:absolute;

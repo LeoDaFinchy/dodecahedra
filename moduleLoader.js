@@ -4,7 +4,7 @@ app.moduleLoader = {
     globals:{
       name:'globals',
       url:'./globals.js',
-      prerequisites:[],
+      prerequisites:['lens'],
       loaded:false
     },
     input:{
@@ -19,12 +19,18 @@ app.moduleLoader = {
       prerequisites:[],
       loaded:false
     },
+    lens:{
+      name:'lens',
+      url:'./lens.js',
+      prerequisites:[],
+      loaded:false
+    },
     default:{
       name:'default',
       prerequisites:[
         'globals',
         'input',
-        'monitor'
+        'monitor',
       ],
       loaded:false
     }
