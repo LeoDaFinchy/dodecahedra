@@ -25,12 +25,25 @@ app.moduleLoader = {
       prerequisites:[],
       loaded:false
     },
+    graph:{
+      name:'graph',
+      url:'./graph.js',
+      prerequisites:[],
+      loaded:false,
+    },
+    worlds:{
+      name:'worlds',
+      url:'./worlds.js',
+      prerequisites:['graph'],
+      loaded:false,
+    },
     default:{
       name:'default',
       prerequisites:[
         'globals',
         'input',
         'monitor',
+        'worlds',
       ],
       loaded:false
     }
