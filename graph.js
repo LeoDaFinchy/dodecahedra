@@ -4,7 +4,7 @@ app.graph = {
   node:function(){
     
   },
-  edge:function(blue,yellow,direction){
+  edge:function(blue,yellow,direction,data){
     /**
      * nodes named blue/yellow to avoid implicit primacy/order
      */
@@ -12,6 +12,7 @@ app.graph = {
     this.blue = blue;
     this.yellow = yellow;
     this.direction = direction || this.directions.green;
+    this.data = data || {};
   },
   group:function(nodes, type){
     this.nodes = nodes;
