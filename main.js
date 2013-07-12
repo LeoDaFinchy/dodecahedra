@@ -36,7 +36,7 @@ function run(){
   for(i in app.globals.world.coords)
   {
     var wi = app.globals.world.coords[i];
-    var sphere = new THREE.Mesh(geom, app.globals.mat);
+    var sphere = new THREE.Mesh(geom, app.globals.mat.clone());
     sphere.position = app.globals.world.coordsToPosition(new THREE.Vector3(wi.x,wi.y,wi.z));
     app.globals.world.nodes[wi.x][wi.y][wi.z].ball = sphere;
     sphere.material.color.setHex(0xffff00);
@@ -66,7 +66,6 @@ function run(){
   $("#toggleUp").click(hideUpCells);
   $("#toggleDown").click(hideDownCells);
   $("#toggleInner").click(hideInnerCells);
-  $("#toggleSolid").click(toggleSolid).toggleClass("lit");
   $("#container").click(sceneClick);
   
   $('body').keydown(app.input.onKeyDown).keyup(app.input.onKeyUp); 
@@ -96,12 +95,29 @@ function run(){
   
   window.requestAnimationFrame(draw);
 }
-function sceneClick(event){
-  
-}
-function toggleSolid(event){
-  app.globals.world.nodes[0][0][0].data.solid = !app.globals.world.nodes[0][0][0].data.solid;
-  app.globals.world.nodes[0][0][0].refreshCells();
+function sceneClick(event)
+{
+  var bounds = app.lens.viewports[0].bounds;
+  var mouseX = (((event.clientX - bounds.min.x) / bounds.size().x) * 2) - 1;
+  var mouseY = (((event.clientY - bounds.min.y) / bounds.size().y) * -2) + 1;
+  var ray = app.globals.projector.pickingRay(new THREE.Vector3(mouseX, mouseY, 0), app.globals.camera);
+  var objects = {o:[],balls:[]};
+  for(var x in app.globals.world.nodes){
+    for(var y in app.globals.world.nodes[x]){
+      for(var z in app.globals.world.nodes[x][y]){
+        objects.o.push(app.globals.world.nodes[x][y][z]);
+        objects.balls.push(app.globals.world.nodes[x][y][z].ball);
+      }
+    }
+  }
+  var intersects = ray.intersectObjects(objects.balls);
+  if(intersects[0])
+  {
+    var hit = objects.o[objects.balls.indexOf(intersects[0].object)];
+    hit.data.solid = !hit.data.solid;
+    hit.ball.material.color.setHex(hit.data.solid?0xffff00:0x9999ff);
+    hit.refreshCells();
+  }
 }
 function hideUpCells(event){
   for(var i in app.globals.world.cells)

@@ -48,7 +48,6 @@ app.worlds = {
           lat.push(alt);
           alt.data.coords = {x:x,y:y,z:z};
           alt.data.solid = true;
-          if(x+y+z <= 0){alt.data.solid = false;}
           this.coords.push({x:x,y:y,z:z});
           
           if(app.worlds.cell.prototype.downCellProfile.validateRootCoordinate({x:x,y:y,z:z},
