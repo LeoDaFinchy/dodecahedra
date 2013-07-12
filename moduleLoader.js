@@ -37,6 +37,12 @@ app.moduleLoader = {
       prerequisites:['graph'],
       loaded:false,
     },
+    cellMeshes:{
+      name:'cellMeshes',
+      url:'./cellMeshes.js',
+      prerequisites:[],
+      loaded:false,
+    },
     default:{
       name:'default',
       prerequisites:[
@@ -44,6 +50,7 @@ app.moduleLoader = {
         'input',
         'monitor',
         'worlds',
+        'cellMeshes',
       ],
       loaded:false
     }

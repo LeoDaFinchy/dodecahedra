@@ -21,10 +21,10 @@ function run(){
   app.globals.init();
   
   var geom = new THREE.SphereGeometry(0.1,8,4);
-  var mat = new THREE.MeshLambertMaterial();
+  app.globals.mat = new THREE.MeshLambertMaterial();
   var pointLight = new THREE.DirectionalLight(0xffffff);
   var ambLight = new THREE.AmbientLight(0x001122);
-  app.globals.world = new app.worlds.world({x:3,y:3,z:3});
+  app.globals.world = new app.worlds.world({x:2,y:2,z:2});
   
   // set its position
   pointLight.position.x = 50;
@@ -36,84 +36,21 @@ function run(){
   for(i in app.globals.world.coords)
   {
     var wi = app.globals.world.coords[i];
-    var sphere = new THREE.Mesh(geom, mat.clone());
+    var sphere = new THREE.Mesh(geom, app.globals.mat);
     sphere.position = app.globals.world.coordsToPosition(new THREE.Vector3(wi.x,wi.y,wi.z));
     app.globals.world.nodes[wi.x][wi.y][wi.z].ball = sphere;
     sphere.material.color.setHex(0xffff00);
     app.globals.scene.add(sphere);
   }
-  app.globals.world.nodes[1][1][1].ball.material.color.setHex(0xff0000);
-  
-  var downCellGeom = new THREE.Geometry();
-  downCellGeom.vertices = [
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,0,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(1,0,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,1,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,0,1))
-    ];
-  downCellGeom.faces = [
-    new THREE.Face3(0,1,3),
-    new THREE.Face3(0,2,1),
-    new THREE.Face3(0,3,2),
-    new THREE.Face3(3,1,2)
-    ];
-  downCellGeom.computeFaceNormals();
-  
-  var upCellGeom = new THREE.Geometry();
-  upCellGeom.vertices = [
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,0,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(-1,0,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,-1,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,0,-1))
-    ];
-  upCellGeom.faces = [
-    new THREE.Face3(0,1,2),
-    new THREE.Face3(0,2,3),
-    new THREE.Face3(0,3,1),
-    new THREE.Face3(3,2,1)
-    ];
-  upCellGeom.computeFaceNormals();
-  
-  var innerCellGeom = new THREE.Geometry();
-  innerCellGeom.vertices = [
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,0,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(1,0,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,1,0)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(1,0,-1)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(0,1,-1)),
-    app.globals.world.coordsToPosition(new THREE.Vector3(1,1,-1))
-    ];
-  innerCellGeom.faces = [
-    new THREE.Face3(0,1,2),
-    new THREE.Face3(0,3,1),
-    new THREE.Face3(0,4,3),
-    new THREE.Face3(0,2,4),
-    new THREE.Face3(5,2,1),
-    new THREE.Face3(5,1,3),
-    new THREE.Face3(5,3,4),
-    new THREE.Face3(5,4,2)
-    ];
-  innerCellGeom.computeFaceNormals();
-  
-  console.log("*-nom-*");
   for(var i in app.globals.world.cells){
     var cell = app.globals.world.cells[i];
-    if(cell.profile == app.worlds.cell.prototype.profiles.down){
-      cell.mesh = new THREE.Mesh(downCellGeom, mat);
-    cell.mesh.position = app.globals.world.coordsToPosition(new THREE.Vector3(cell.root.x, cell.root.y, cell.root.z));
-    app.globals.scene.add(cell.mesh);
-    }
-    else if(cell.profile == app.worlds.cell.prototype.profiles.up)
+    var cellGeom;
+    if(cell.profile == cell.profiles.down) //testing - for real, remove the if around this block
     {
-      cell.mesh = new THREE.Mesh(upCellGeom, mat);
-    cell.mesh.position = app.globals.world.coordsToPosition(new THREE.Vector3(cell.root.x, cell.root.y, cell.root.z));
-    app.globals.scene.add(cell.mesh);
-    }
-    else if(cell.profile == app.worlds.cell.prototype.profiles.inner)
-    {
-      cell.mesh = new THREE.Mesh(innerCellGeom, mat);
-    cell.mesh.position = app.globals.world.coordsToPosition(new THREE.Vector3(cell.root.x, cell.root.y, cell.root.z));
-    app.globals.scene.add(cell.mesh);
+      cellGeom = app.cellMeshes.selectMesh(cell);
+      cell.mesh = new THREE.Mesh(cellGeom, app.globals.mat);
+      cell.mesh.position = app.globals.world.coordsToPosition(new THREE.Vector3(cell.root.x,cell.root.y,cell.root.z));
+      app.globals.scene.add(cell.mesh);
     }
   }
   app.globals.scene.add(pointLight);
@@ -129,6 +66,8 @@ function run(){
   $("#toggleUp").click(hideUpCells);
   $("#toggleDown").click(hideDownCells);
   $("#toggleInner").click(hideInnerCells);
+  $("#toggleSolid").click(toggleSolid).toggleClass("lit");
+  $("#container").click(sceneClick);
   
   $('body').keydown(app.input.onKeyDown).keyup(app.input.onKeyUp); 
   
@@ -157,7 +96,13 @@ function run(){
   
   window.requestAnimationFrame(draw);
 }
-
+function sceneClick(event){
+  
+}
+function toggleSolid(event){
+  app.globals.world.nodes[0][0][0].data.solid = !app.globals.world.nodes[0][0][0].data.solid;
+  app.globals.world.nodes[0][0][0].refreshCells();
+}
 function hideUpCells(event){
   for(var i in app.globals.world.cells)
   {

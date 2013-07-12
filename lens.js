@@ -11,14 +11,6 @@ app.lens = {
       far:10000,
       clear:0x6699cc,
     },
-    {
-      bounds:new THREE.Box2(new THREE.Vector2(200,0), new THREE.Vector2(300,150)),
-      aspect:0,
-      viewAngle:45,
-      near:0.1,
-      far:10000,
-      clear:0x6699cc,
-    }
   ],
   setCamToPort:function(cam, port){
     var viewport = this.viewports[port];
