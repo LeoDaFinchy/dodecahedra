@@ -1,9 +1,10 @@
 body{margin:0;}
 canvas{
   border:black solid 1px;
+  float:left;
 }
 #output{
-  position:absolute;
+  float:left;
   top:0;
   padding:5px;
   font-size:10px;
