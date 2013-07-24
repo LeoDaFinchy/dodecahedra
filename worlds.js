@@ -26,13 +26,20 @@ app.worlds = {
   {
     var skew30 = Math.tan(Math.TAU/12);
     var skew15 = Math.tan(Math.TAU/24);
+    /**/
     this.matrix = new THREE.Matrix4(
       skew30,-skew30,0,0,
       skew30,skew30,skew30,0,
       -skew15,-skew15,skew30,0,
       0,0,0,1);
+    /**//*
+    this.matrix = new THREE.Matrix4(
+      1,0,0,0,
+      0,1,0,0,
+      0,0,1,0,
+      0,0,0,1);
+    /**/
     this.dimensions = dimensions;
-    
     /**
      * FINE FOR NOW
      */
@@ -48,6 +55,13 @@ app.worlds = {
           lat.push(alt);
           alt.data.coords = {x:x,y:y,z:z};
           alt.data.solid = true;
+          /*if(dimensions.x>3&&dimensions.y>3&&dimensions.z>3)
+          {
+            alt.data.solid = false;
+            if(x>0&&x<dimensions.x-1&&y>0&&y<dimensions.y-1&&z>0&&z<dimensions.z-1){alt.data.solid = true;}
+          }*/
+          alt.data.colour = new THREE.Color();
+          alt.data.colour.setRGB((x/(dimensions.x-1)*3/4)+0.25,(y/(dimensions.y-1)*3/4)+0.25,(z/(dimensions.z-1)*3/4)+0.25);
           this.coords.push({x:x,y:y,z:z});
           
           if(app.worlds.cell.prototype.downCellProfile.validateRootCoordinate({x:x,y:y,z:z},
@@ -110,8 +124,12 @@ app.worlds.node.prototype =
   _type:"worlds.node",
   refreshCells:function(){
     for(var c in this.cells){
-      app.globals.scene.remove(this.cells[c].mesh);
-      this.cells[c].mesh = new THREE.Mesh(app.cellMeshes.selectMesh(this.cells[c],app.globals.mat));
+      var cell = this.cells[c];
+      app.globals.scene.remove(cell.mesh);
+      cell.mesh = new THREE.Mesh(app.cellMeshes.selectMesh(this.cells[c]),app.globals.mat);
+      cell.mesh.material.wireframe = false;
+      cell.mesh.geometry.computeFaceNormals();
+      cell.mesh.position = app.globals.world.coordsToPosition(new THREE.Vector3(cell.root.x,cell.root.y,cell.root.z));
       app.globals.scene.add(this.cells[c].mesh);
     }
   }

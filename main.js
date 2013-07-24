@@ -20,32 +20,40 @@ function run(){
   //This needs to go, really
   app.globals.init();
   
-  var geom = new THREE.SphereGeometry(0.1,8,4);
+  var geom = new THREE.SphereGeometry(0.5,8,4);
   app.globals.mat = new THREE.MeshLambertMaterial();
+  app.globals.sphereMat = new THREE.LineBasicMaterial();
+  app.globals.sphereMat.wireframe = true;
+  //app.globals.sphereMat.visible = false;
+  app.globals.sphereMat.transparent = true;
+  app.globals.sphereMat.opacity = 0.5;
   var pointLight = new THREE.DirectionalLight(0xffffff);
-  var ambLight = new THREE.AmbientLight(0x001122);
-  app.globals.world = new app.worlds.world({x:2,y:2,z:2});
+  //var ambLight = new THREE.AmbientLight(0x001122);
+  var ambLight = new THREE.AmbientLight(0x222222);
+  app.globals.world = new app.worlds.world({x:3,y:3,z:3});
   
   // set its position
   pointLight.position.x = 50;
   pointLight.position.y = 50;
   pointLight.position.z = 50;
   
-  app.globals.cameraRig.position = (new THREE.Vector3(0,2,10));
+  app.globals.cameraRig.position = (new THREE.Vector3(0,3,10));
   
   for(i in app.globals.world.coords)
   {
     var wi = app.globals.world.coords[i];
-    var sphere = new THREE.Mesh(geom, app.globals.mat.clone());
-    sphere.position = app.globals.world.coordsToPosition(new THREE.Vector3(wi.x,wi.y,wi.z));
-    app.globals.world.nodes[wi.x][wi.y][wi.z].ball = sphere;
-    sphere.material.color.setHex(0xffff00);
-    app.globals.scene.add(sphere);
+    if(app.globals.world.nodes[wi.x][wi.y][wi.z].data.solid === true){
+      var sphere = new THREE.Mesh(geom, app.globals.sphereMat);
+      sphere.position = app.globals.world.coordsToPosition(new THREE.Vector3(wi.x,wi.y,wi.z));
+      app.globals.world.nodes[wi.x][wi.y][wi.z].ball = sphere;
+      //sphere.material.color.setHex(app.globals.world.nodes[wi.x][wi.y][wi.z].data.colour.getHex());
+      //sphere.material.ambient.setHex(app.globals.world.nodes[wi.x][wi.y][wi.z].data.colour.getHex());
+      app.globals.scene.add(sphere);
+    }
   }
   for(var i in app.globals.world.cells){
     var cell = app.globals.world.cells[i];
     var cellGeom;
-    if(cell.profile == cell.profiles.down) //testing - for real, remove the if around this block
     {
       cellGeom = app.cellMeshes.selectMesh(cell);
       cell.mesh = new THREE.Mesh(cellGeom, app.globals.mat);
@@ -53,19 +61,27 @@ function run(){
       app.globals.scene.add(cell.mesh);
     }
   }
+  
+  var lines = new THREE.Line(new THREE.Geometry(), new THREE.LineBasicMaterial({vertexColors:true}), THREE.LinePieces);
+  lines.geometry.vertices.push(new THREE.Vector3(0,0,0));
+  lines.geometry.vertices.push(app.globals.world.coordsToPosition(new THREE.Vector3(2,0,0)));
+  lines.geometry.vertices.push(new THREE.Vector3(0,0,0));
+  lines.geometry.vertices.push(app.globals.world.coordsToPosition(new THREE.Vector3(0,2,0)));
+  lines.geometry.vertices.push(new THREE.Vector3(0,0,0));
+  lines.geometry.vertices.push(app.globals.world.coordsToPosition(new THREE.Vector3(0,0,2)));
+  lines.geometry.colors.push(new THREE.Color(0xff0000));
+  lines.geometry.colors.push(new THREE.Color(0xff0000));
+  lines.geometry.colors.push(new THREE.Color(0x00ff00));
+  lines.geometry.colors.push(new THREE.Color(0x00ff00));
+  lines.geometry.colors.push(new THREE.Color(0x0000ff));
+  lines.geometry.colors.push(new THREE.Color(0x0000ff));
+  lines.translateY(-1);
+  
+  app.globals.scene.add(lines);
+  
   app.globals.scene.add(pointLight);
   app.globals.scene.add(ambLight);
   
-  app.monitor.trace.push(function(){return "X1:"+app.input.axes.X1;});
-  app.monitor.trace.push(function(){return "Y1:"+app.input.axes.Y1;});
-  app.monitor.trace.push(function(){return "X2:"+app.input.axes.X2;});
-  app.monitor.trace.push(function(){return "Y2:"+app.input.axes.Y2;});
-  app.monitor.trace.push(function(){return "Z1:"+app.input.axes.Z1;});
-  app.monitor.trace.push(function(){return app.monitor.tabulateMatrix(app.globals.camera.matrixWorld);});
-  
-  $("#toggleUp").click(hideUpCells);
-  $("#toggleDown").click(hideDownCells);
-  $("#toggleInner").click(hideInnerCells);
   $("#container").click(sceneClick);
   
   $('body').keydown(app.input.onKeyDown).keyup(app.input.onKeyUp); 
@@ -115,53 +131,14 @@ function sceneClick(event)
   {
     var hit = objects.o[objects.balls.indexOf(intersects[0].object)];
     hit.data.solid = !hit.data.solid;
-    hit.ball.material.color.setHex(hit.data.solid?0xffff00:0x9999ff);
+    if(hit.data.solid === false)
+    {
+      //app.globals.scene.remove(hit.ball);
+      //delete hit.ball;
+    }
+    //hit.ball.material.color.setHex(hit.data.solid?hit.data.colour.getHex():0x000000);
     hit.refreshCells();
   }
-}
-function hideUpCells(event){
-  for(var i in app.globals.world.cells)
-  {
-    if(app.globals.world.cells[i].profile == app.worlds.cell.prototype.profiles.up){app.globals.scene.remove(app.globals.world.cells[i].mesh);}
-  }
-  $('#toggleUp').click(showUpCells).removeClass("lit");
-}
-function showUpCells(event){
-  for(var i in app.globals.world.cells)
-  {
-    if(app.globals.world.cells[i].profile == app.worlds.cell.prototype.profiles.up){app.globals.scene.add(app.globals.world.cells[i].mesh);}
-  }
-  $('#toggleUp').click(hideUpCells).addClass("lit");
-}
-
-function hideDownCells(event){
-  for(var i in app.globals.world.cells)
-  {
-    if(app.globals.world.cells[i].profile == app.worlds.cell.prototype.profiles.down){app.globals.scene.remove(app.globals.world.cells[i].mesh);}
-  }
-  $('#toggleDown').click(showDownCells).removeClass("lit");
-}
-function showDownCells(event){
-  for(var i in app.globals.world.cells)
-  {
-    if(app.globals.world.cells[i].profile == app.worlds.cell.prototype.profiles.down){app.globals.scene.add(app.globals.world.cells[i].mesh);}
-  }
-  $('#toggleDown').click(hideDownCells).addClass("lit");
-}
-
-function hideInnerCells(event){
-  for(var i in app.globals.world.cells)
-  {
-    if(app.globals.world.cells[i].profile == app.worlds.cell.prototype.profiles.inner){app.globals.scene.remove(app.globals.world.cells[i].mesh);}
-  }
-  $('#toggleInner').click(showInnerCells).removeClass("lit");
-}
-function showInnerCells(event){
-  for(var i in app.globals.world.cells)
-  {
-    if(app.globals.world.cells[i].profile == app.worlds.cell.prototype.profiles.inner){app.globals.scene.add(app.globals.world.cells[i].mesh);}
-  }
-  $('#toggleInner').click(hideInnerCells).addClass("lit");
 }
 function refreshAxes(){
   app.input.axes.X1 = app.input.keys.d.state - app.input.keys.a.state;
