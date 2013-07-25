@@ -25,9 +25,12 @@ app.input = {
     for(var i in app.input.keys){
       var key = app.input.keys[i];
       if(downKey == key.code){
-        key.state = 1;
-        if(key.down){
-          key.down();
+        //We only want to trigger "down" when the state changes, not on system repetition
+        if(key.state != 1){
+          key.state = 1;
+          if(key.down){
+            key.down();
+          }
         }
       }
     }
