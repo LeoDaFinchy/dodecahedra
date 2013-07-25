@@ -1,69 +1,76 @@
-var app = app;
+var app = app || {};
 app.moduleLoader = {
   menu:{
     globals:{
       name:'globals',
       url:'./globals.js',
       prerequisites:['lens'],
-      loaded:false
+      load:false
     },
     input:{
       name:'input',
       url:'./input.js',
       prerequisites:[],
-      loaded:false
+      load:false
     },
     monitor:{
       name:'monitor',
       url:'./monitor.js',
       prerequisites:[],
-      loaded:false
+      load:false
     },
     lens:{
       name:'lens',
       url:'./lens.js',
       prerequisites:[],
-      loaded:false
+      load:false
     },
     graph:{
       name:'graph',
       url:'./graph.js',
       prerequisites:[],
-      loaded:false,
+      load:false,
     },
     worlds:{
       name:'worlds',
       url:'./worlds.js',
       prerequisites:['graph'],
-      loaded:false,
+      load:false,
     },
     cellMeshes:{
       name:'cellMeshes',
       url:'./cellMeshes.js',
       prerequisites:[],
-      loaded:false,
+      load:false,
     },
     default:{
       name:'default',
       prerequisites:[
         'globals',
+        'globals',
+        'graph',
         'input',
         'monitor',
         'worlds',
         'cellMeshes',
       ],
-      loaded:false
+      load:false
     }
   },
   loadModule:function(name, callback){
     var loaded = $.when();
-    if(this.menu[name].loaded)
+    if(this.menu[name].load == "complete")
     {
-      console.log(name+" already loaded");
+      console.log(name+" has already been loaded");
+    }
+    else if(this.menu[name].load == "pending")
+    {
+      console.log(name+" is already loading");
     }
     else
     {
       if(!this.menu[name].url){console.log("loading module pack "+name);}
+      this.menu[name].load = "pending";
       for(var i in this.menu[name].prerequisites)
       {
         loaded = $.when(loaded, this.loadModule(this.menu[name].prerequisites[i]));
@@ -73,16 +80,20 @@ app.moduleLoader = {
         console.log("loading "+name+"...");
         loaded = $.when(loaded, $.getScript(this.menu[name].url));
       }
+      loaded.done(function(){
+        console.log(name+" loaded");
+        app.moduleLoader.menu[name].load = "complete";
+      }, callback)
+      .fail(function()
+      {
+        console.log("failed to load "+name);
+      });
     }
-    loaded.done(function(){
-      console.log(name+" loaded");
-      app.moduleLoader.menu[name].loaded = true;
-    }, callback)
-    .fail(function()
-    {
-      console.log("failed to load "+name);
-    });
     
     return loaded;
   }
 };
+/**
+ * TEST
+ */
+app.moduleLoader.loadModule("default");
