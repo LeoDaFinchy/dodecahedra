@@ -1,0 +1,26 @@
+.status{
+  font-size:12px;
+  margin:3px;
+}
+.status:before{
+  content:"";
+  position:absolute;
+  min-height:10px;
+  min-width:10px;
+  left:100px;
+  font-size:12px;
+  border-radius:10px;
+  border:1px solid black;
+}
+.no:before{
+  background-color:#999999;
+}
+.pending:before{
+  background-color:#ffff99;
+}
+.complete:before{
+  background-color:#99ff99;
+}
+.failed:before{
+  background-color:#ff9999;
+}

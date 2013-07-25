@@ -47,8 +47,6 @@ app.moduleLoader = {
       name:'default',
       prerequisites:[
         'globals',
-        'globals',
-        'graph',
         'input',
         'monitor',
         'worlds',
@@ -87,6 +85,7 @@ app.moduleLoader = {
       .fail(function()
       {
         console.log("failed to load "+name);
+        app.moduleLoader.menu[name].load = "failed";
       });
     }
     
@@ -96,4 +95,16 @@ app.moduleLoader = {
 /**
  * TEST
  */
+function displayStatus()
+{
+  var display = $("#state");
+  var content = "";
+  for(var m in app.moduleLoader.menu)
+  {
+    content += "<div class='status "+app.moduleLoader.menu[m].load+"'>"+app.moduleLoader.menu[m].name+"</div>";
+  }
+  display.html(content);
+  window.requestAnimationFrame(displayStatus);
+}
 app.moduleLoader.loadModule("default");
+window.requestAnimationFrame(displayStatus);
