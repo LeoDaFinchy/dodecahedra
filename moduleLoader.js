@@ -1,4 +1,5 @@
-var app = app || {};
+var app = app || {testModuleLoader:true};
+
 app.moduleLoader = {
   menu:{
     globals:{
@@ -57,6 +58,7 @@ app.moduleLoader = {
   },
   loadModule:function(name, callback){
     var loaded = $.when();
+    //c = "green£;";
     if(this.menu[name].load == "complete")
     {
       console.log(name+" has already been loaded");
@@ -93,7 +95,7 @@ app.moduleLoader = {
   }
 };
 /**
- * TEST
+ * TESTING
  */
 function displayStatus()
 {
@@ -106,5 +108,8 @@ function displayStatus()
   display.html(content);
   window.requestAnimationFrame(displayStatus);
 }
-app.moduleLoader.loadModule("default");
-window.requestAnimationFrame(displayStatus);
+if(app.testModuleLoader)
+{
+  app.moduleLoader.loadModule("default");
+  window.requestAnimationFrame(displayStatus);
+}

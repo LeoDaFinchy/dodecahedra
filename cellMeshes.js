@@ -1,5 +1,5 @@
+var app = app || {testCellMeshes:true};
 var THREE = THREE;
-var app = app || {};
 
 app.cellMeshes = {
   meshes:{
@@ -23,7 +23,251 @@ app.cellMeshes = {
     }
     return (meshes[t]);
   },
+  /**
+   * from the mesh, get the vertices, whether they are behind the cut or not, and give them their own group
+   * */
+  compileVertexSliceInfo:function(mesh,weights)
+  {
+    var vertices = [];
+    var groups = {};
+    for(var w in weights)
+    {
+      var vertex = {
+        vertex: mesh.vertices[w],
+        behind: weights[w],
+        group:  weights[w] ? -1 : w,
+      };
+      vertices.push(vertex);
+      //vertex groups are labelled after front vertices
+      if(!weights[w])
+      {
+        groups[w] = [vertex];
+      }
+    }
+    return {vertices:vertices,groups:groups,faceGroups:{}};
+  },
+  /**
+   * for all the vertex groups present on a face, put all those vertices in one group
+   * */
+  unifyFaceGroups:function(groups, faceGroups)
+  {
+    var unifiedGroup = null;
+    for(var fG in faceGroups)
+    {
+      //set the unified Group if it doesn't exist already, skip moving vertices
+      if(!unifiedGroup)
+      {
+        unifiedGroup = fG;
+        continue;
+      }
+      //set the group of the front vertices to the unified group.
+      console.log(groups);
+      groups[unifiedGroup] = groups[unifiedGroup].concat(groups[fG]);
+      for(var v in groups[fG])
+      {
+        groups[fG][v].group = unifiedGroup;
+      }
+      delete groups[fG];
+      console.log(groups);
+    }
+  },
+  /**
+   * find which vertex groups are present on a face
+   * */
+  discoverFaceGroups:function(face, vertexInfo)
+  {
+    var faceVertices = [face.a,face.b,face.c];
+    var faceGroups = {};
+    for(var fV in faceVertices)
+    {
+      if(!vertexInfo.vertices[faceVertices[fV]].behind){
+        faceGroups[vertexInfo.vertices[faceVertices[fV]].group] = true;
+      }
+    }
+    return faceGroups;
+  },
+  mapToSlice:function(a,b,map){
+    var x = Math.min(a,b);
+    var y = Math.max(a,b);
+    return map[x][y];
+  },
+  /**
+   * group all adjacent cut vertices
+   * */
+  groupVertices:function(vertexInfo, mesh)
+  {
+    for(var f in mesh.faces)
+    {
+      var face = mesh.faces[f];
+      var faceGroups = app.cellMeshes.discoverFaceGroups(face, vertexInfo);
+      console.log("Face",f);
+      app.cellMeshes.unifyFaceGroups(vertexInfo.groups,faceGroups);
+    }
+  },
+  /**
+   * sliceMesn returns a mesh representing the slice made through the cell.
+   * */
+  sliceMesh:function(mesh, weights){
+    if(mesh.vertices.length != weights.length)
+    {
+      console.error("Number of mesh slice vertex weights inequal to number of vertices");
+      return mesh;
+    }
+    var slicedMesh = new THREE.Geometry();
+    var vertexMap = {};
+    // First, identify which vertices are behind the cut surface, and which are in front
+    var vertexInfo = app.cellMeshes.compileVertexSliceInfo(mesh,weights);
+    // We need to consider whether the better solution is to check all the vertices 
+    // for whether they are adjacent, or to create a whole bunch of useless midpoints
+    // I suspect that both have an execution time ~ N^2
+    
+    
+    // THERE IS A BETTER WAY
+    // We should loop through the faces, and create a map for each pair there. This
+    // is roughtly linear complexity and only produces double what we need as we are
+    // sticking with triangles. Making sure to arrange them smallest-index-first will
+    // eliminate the duplicates.
+    // THIS IS A NOTE BECAUSE I HAVE BIGGER PROBLEMS RIGHT NOW
+    for(var first in vertexInfo.vertices)
+    {
+      for(var second = first; second < vertexInfo.vertices.length; second++)
+      {
+        if(vertexInfo.vertices[first].behind != vertexInfo.vertices[second].behind)
+        {
+          var halfpoint = vertexInfo.vertices[first].vertex.clone().lerp(vertexInfo.vertices[second].vertex,0.5);
+          slicedMesh.vertices.push(halfpoint);
+          vertexMap[first] = vertexMap[first] || [];
+          vertexMap[first][second] = slicedMesh.vertices.length-1;
+        }
+      }
+    }
+    /*app.cellMeshes.groupVertices(vertexInfo, mesh);
+    console.log("final groups:",vertexInfo.groups);*/
+    // For each set:
+    /**/
+    var edges = [];
+    var centreVertex = new THREE.Vector3(0,0,0);
+    for(var f in mesh.faces)
+    {
+      var face = mesh.faces[f];
+      var a = vertexInfo.vertices[face.a];
+      var b = vertexInfo.vertices[face.b];
+      var c = vertexInfo.vertices[face.c];
+      if(a.behind)
+      {
+        if(b.behind)
+        {
+          if(c.behind)
+          {
+            //console.log("Face",f,"is behind");
+          }
+          else
+          {
+            edges.push({
+              from:app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+              to:app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+            });
+            centreVertex.add(slicedMesh.vertices[app.cellMeshes.mapToSlice(face.a,face.c, vertexMap)]);
+            slicedMesh.faces.push(new THREE.Face3(
+                app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+                app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+                slicedMesh.vertices.length
+            ));
+          }
+        }
+        else
+        {
+          if(c.behind)
+          {
+            edges.push({
+              from:app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+              to:app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+            });
+            centreVertex.add(slicedMesh.vertices[app.cellMeshes.mapToSlice(face.b,face.c, vertexMap)]);
+            slicedMesh.faces.push(new THREE.Face3(
+                app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+                app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+                slicedMesh.vertices.length
+            ));
+          }
+          else
+          {
+            edges.push({
+              from:app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+              to:app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+            });
+            centreVertex.add(slicedMesh.vertices[app.cellMeshes.mapToSlice(face.a,face.c, vertexMap)]);
+            slicedMesh.faces.push(new THREE.Face3(
+                app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+                app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+                slicedMesh.vertices.length
+            ));
+          }
+        }
+      }
+      else
+      {
+        if(b.behind)
+        {
+          if(c.behind)
+          {
+            edges.push({
+              from:app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+              to:app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+            });
+            centreVertex.add(slicedMesh.vertices[app.cellMeshes.mapToSlice(face.a,face.b, vertexMap)]);
+            slicedMesh.faces.push(new THREE.Face3(
+                app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+                app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+                slicedMesh.vertices.length
+            ));
+          }
+          else
+          {
+            edges.push({
+              from:app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+              to:app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+            });
+            centreVertex.add(slicedMesh.vertices[app.cellMeshes.mapToSlice(face.a,face.b, vertexMap)]);
+            slicedMesh.faces.push(new THREE.Face3(
+                app.cellMeshes.mapToSlice(face.a,face.b, vertexMap),
+                app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+                slicedMesh.vertices.length
+            ));
+          }
+        }
+        else
+        {
+          if(c.behind)
+          {
+            edges.push({
+              from:app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+              to:app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+            });
+            centreVertex.add(slicedMesh.vertices[app.cellMeshes.mapToSlice(face.b,face.c, vertexMap)]);
+            slicedMesh.faces.push(new THREE.Face3(
+                app.cellMeshes.mapToSlice(face.b,face.c, vertexMap),
+                app.cellMeshes.mapToSlice(face.a,face.c, vertexMap),
+                slicedMesh.vertices.length
+            ));
+          }
+          else
+          {
+            //console.log("Face",f,"is in front");
+          }
+        }
+      }
+    }
+    centreVertex.divideScalar(slicedMesh.vertices.length);
+    slicedMesh.vertices.push(centreVertex);
+    
+    slicedMesh.computeFaceNormals();
+    
+    return(slicedMesh);
+  },
   generateMeshes:function(){
+    
+    Math.TAU = Math.PI*2;
     var skew30 = Math.tan(Math.TAU/12);
     var skew15 = Math.tan(Math.TAU/24);
     /**/
@@ -46,23 +290,39 @@ app.cellMeshes = {
      */
     // 0 KRGB
     geom = new THREE.Geometry();
-    geom.vertices = [/*
+    geom.vertices = [
       new THREE.Vector3( 0.0, 0.0, 0.0).applyMatrix4(matrix),
       new THREE.Vector3( 1.0, 0.0, 0.0).applyMatrix4(matrix),
       new THREE.Vector3( 0.0, 1.0, 0.0).applyMatrix4(matrix),
-      new THREE.Vector3( 0.0, 0.0, 1.0).applyMatrix4(matrix),*/
+      new THREE.Vector3( 0.0, 0.0, 1.0).applyMatrix4(matrix),
     ];
-    geom.faces = [/*
+    geom.faces = [
       new THREE.Face3(0,1,3),
       new THREE.Face3(0,2,1),
       new THREE.Face3(0,3,2),
-      new THREE.Face3(3,1,2),*/
+      new THREE.Face3(3,1,2),
     ];
-    geom.computeFaceNormals();
-    app.cellMeshes.meshes.downCellMeshes.push(geom);
+    //geom.computeFaceNormals();
+    //app.cellMeshes.meshes.downCellMeshes.push(geom);
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,1]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,0]));
+    app.cellMeshes.meshes.downCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,0]));
     
     // 1 -RGB
-    geom = new THREE.Geometry();
+    /*geom = new THREE.Geometry();
     geom.vertices = [  
       new THREE.Vector3( 0.5, 0.0, 0.0).applyMatrix4(matrix),
       new THREE.Vector3( 0.0, 0.5, 0.0).applyMatrix4(matrix),
@@ -257,28 +517,45 @@ app.cellMeshes = {
     ];
     geom.computeFaceNormals();
     app.cellMeshes.meshes.downCellMeshes.push(geom);
-    
+    */
     /**
      * Up Cells
      */
      
     // 0 WCMY
     geom = new THREE.Geometry();
-    geom.vertices = [/*
+    geom.vertices = [
       new THREE.Vector3( 1.0, 1.0, 1.0).applyMatrix4(matrix),
       new THREE.Vector3( 0.0, 1.0, 1.0).applyMatrix4(matrix),
       new THREE.Vector3( 1.0, 0.0, 1.0).applyMatrix4(matrix),
-      new THREE.Vector3( 1.0, 1.0, 0.0).applyMatrix4(matrix),*/
+      new THREE.Vector3( 1.0, 1.0, 0.0).applyMatrix4(matrix),
     ];
-    geom.faces = [/*
+    geom.faces = [
       new THREE.Face3(0,1,2),
       new THREE.Face3(0,2,3),
       new THREE.Face3(0,3,1),
-      new THREE.Face3(3,2,1),*/
+      new THREE.Face3(3,2,1),
     ];
-    geom.computeFaceNormals();
-    app.cellMeshes.meshes.upCellMeshes.push(geom);
-     
+    //geom.computeFaceNormals();
+    //app.cellMeshes.meshes.upCellMeshes.push(geom);
+    
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,1]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,0]));
+    app.cellMeshes.meshes.upCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,0]));
+    /*
     // 1 -CMY
     geom = new THREE.Geometry();
     geom.vertices = [
@@ -475,7 +752,7 @@ app.cellMeshes = {
     ];
     geom.computeFaceNormals();
     app.cellMeshes.meshes.upCellMeshes.push(geom);
-    
+    */
     /**
      * Inner Cells
      */
@@ -483,14 +760,14 @@ app.cellMeshes = {
     // 0 RGBCMY
     geom = new THREE.Geometry();
     geom.vertices = [
-      /*new THREE.Vector3( 1.0, 0.0, 0.0).applyMatrix4(matrix),//R
+      new THREE.Vector3( 1.0, 0.0, 0.0).applyMatrix4(matrix),//R
       new THREE.Vector3( 0.0, 1.0, 0.0).applyMatrix4(matrix),//G
       new THREE.Vector3( 0.0, 0.0, 1.0).applyMatrix4(matrix),//B
       new THREE.Vector3( 0.0, 1.0, 1.0).applyMatrix4(matrix),//C
       new THREE.Vector3( 1.0, 0.0, 1.0).applyMatrix4(matrix),//M
-      new THREE.Vector3( 1.0, 1.0, 0.0).applyMatrix4(matrix),//Y*/
+      new THREE.Vector3( 1.0, 1.0, 0.0).applyMatrix4(matrix),//Y
     ];
-    geom.faces = [/*
+    geom.faces = [
       new THREE.Face3(0,2,1),
       new THREE.Face3(0,1,5),
       new THREE.Face3(5,1,3),
@@ -498,11 +775,76 @@ app.cellMeshes = {
       new THREE.Face3(2,4,3),
       new THREE.Face3(0,4,2),
       new THREE.Face3(5,4,0),
-      new THREE.Face3(5,3,4),*/
+      new THREE.Face3(5,3,4),
     ];
-    geom.computeFaceNormals();
-    app.cellMeshes.meshes.innerCellMeshes.push(geom);
+    //geom.computeFaceNormals();
+    //app.cellMeshes.meshes.innerCellMeshes.push(geom);
     
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,1,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,0,1,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,1,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,0,0,1]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,1,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,0,1,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,1,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,1,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,1,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,1,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,1,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,1,0,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,1,0,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[1,0,0,0,0,0]));
+    app.cellMeshes.meshes.innerCellMeshes.push(app.cellMeshes.sliceMesh(geom,[0,0,0,0,0,0]));
+    /*
     // 1 -GBCMY
     geom = new THREE.Geometry();
     geom.vertices = [
@@ -1613,8 +1955,20 @@ app.cellMeshes = {
     geom.faces = [
     ];
     geom.computeFaceNormals();
-    app.cellMeshes.meshes.innerCellMeshes.push(geom);
+    app.cellMeshes.meshes.innerCellMeshes.push(geom);*/
   },
 };
 
 app.cellMeshes.generateMeshes();
+
+/**
+ * TESTING
+ * */
+ 
+if(app.testCellMeshes)
+{
+  var mesh = app.cellMeshes.meshes.innerCellMeshes[0];
+  var weights = [1,1,0,1,0,0];
+  
+  app.cellMeshes.sliceMesh(mesh,weights);
+}
