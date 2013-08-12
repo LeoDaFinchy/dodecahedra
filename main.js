@@ -114,8 +114,8 @@ function run(){
 function sceneClick(event)
 {
   var bounds = app.lens.viewports[0].bounds;
-  var mouseX = (((event.clientX - bounds.min.x) / bounds.size().x) * 2) - 1;
-  var mouseY = (((event.clientY - bounds.min.y) / bounds.size().y) * -2) + 1;
+  var mouseX = (((event.clientX - bounds.min.x - $('#container')[0].offsetLeft) / bounds.size().x) * 2) - 1;
+  var mouseY = (((event.clientY - bounds.min.y - $('#container')[0].offsetTop) / bounds.size().y) * -2) + 1;
   var ray = app.globals.projector.pickingRay(new THREE.Vector3(mouseX, mouseY, 0), app.globals.camera);
   var objects = {o:[],balls:[]};
   for(var x in app.globals.world.nodes){
