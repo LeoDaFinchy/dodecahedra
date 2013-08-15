@@ -20,22 +20,31 @@ function run(){
   //This needs to go, really
   app.globals.init();
   
-  var geom = new THREE.SphereGeometry(0.5,8,4);
+  var geom = app.cellMeshes.meshes.clickMesh.mesh;
   app.globals.mat = new THREE.MeshLambertMaterial();
-  app.globals.sphereMat = new THREE.LineBasicMaterial();
-  app.globals.sphereMat.wireframe = true;
+  app.globals.sphereMat = new THREE.MeshLambertMaterial();
+  app.globals.sphereMat.wireframe = false;
   //app.globals.sphereMat.visible = false;
-  app.globals.sphereMat.transparent = true;
-  app.globals.sphereMat.opacity = 0.5;
-  var pointLight = new THREE.DirectionalLight(0xffffff);
-  //var ambLight = new THREE.AmbientLight(0x001122);
+  //app.globals.sphereMat.transparent = true;
+  app.globals.sphereMat.opacity = 0.2;
+  var sunLight = new THREE.DirectionalLight(0xffff99);
+  var glowLight = new THREE.DirectionalLight(0x000033);
   var ambLight = new THREE.AmbientLight(0x222222);
-  app.globals.world = new app.worlds.world({x:3,y:3,z:3});
+  app.globals.world = new app.worlds.world({x:5,y:5,z:5});
   
   // set its position
-  pointLight.position.x = 50;
-  pointLight.position.y = 50;
-  pointLight.position.z = 50;
+  sunLight.position.x = 50;
+  sunLight.position.y = 50;
+  sunLight.position.z = 50;
+  
+  // set its position
+  glowLight.position.x = -50;
+  glowLight.position.y = 25;
+  glowLight.position.z = -10;
+  
+  app.globals.scene.add(sunLight);
+  app.globals.scene.add(glowLight);
+  app.globals.scene.add(ambLight);
   
   app.globals.cameraRig.position = (new THREE.Vector3(0,3,10));
   
@@ -78,9 +87,6 @@ function run(){
   lines.translateY(-1);
   
   app.globals.scene.add(lines);
-  
-  app.globals.scene.add(pointLight);
-  app.globals.scene.add(ambLight);
   
   $("#container").click(sceneClick);
   

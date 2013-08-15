@@ -6,6 +6,10 @@ app.cellMeshes = {
     upCellMeshes:[],
     downCellMeshes:[],
     innerCellMeshes:[],
+    clickMesh:{
+      mesh:new THREE.Geometry(),
+      faceMap:[],
+    }
   },
   selectMesh:function(cell){
     var meshes;
@@ -1956,6 +1960,47 @@ app.cellMeshes = {
     ];
     geom.computeFaceNormals();
     app.cellMeshes.meshes.innerCellMeshes.push(geom);*/
+    
+    geom = new THREE.Geometry();
+    geom.vertices = [
+      new THREE.Vector3( 0.5, 0.5, 0.5).applyMatrix4(matrix),//top
+      
+      new THREE.Vector3( 0.0, 0.0, 1.0).applyMatrix4(matrix),//6
+      new THREE.Vector3( 0.0, 1.0, 0.0).applyMatrix4(matrix),//10
+      new THREE.Vector3( 1.0, 0.0, 0.0).applyMatrix4(matrix),//2
+      
+      new THREE.Vector3( 0.5, 0.5,-0.5).applyMatrix4(matrix),//12
+      new THREE.Vector3( 0.5,-0.5, 0.5).applyMatrix4(matrix),//4
+      new THREE.Vector3(-0.5, 0.5, 0.5).applyMatrix4(matrix),//8
+      
+      new THREE.Vector3( 0.5,-0.5,-0.5).applyMatrix4(matrix),//2
+      new THREE.Vector3(-0.5, 0.5,-0.5).applyMatrix4(matrix),//10
+      new THREE.Vector3(-0.5,-0.5, 0.5).applyMatrix4(matrix),//6
+      
+      new THREE.Vector3( 0.0, 0.0,-1.0).applyMatrix4(matrix),//12
+      new THREE.Vector3( 0.0,-1.0, 0.0).applyMatrix4(matrix),//4
+      new THREE.Vector3(-1.0, 0,0, 0,0).applyMatrix4(matrix),//8
+      
+      new THREE.Vector3(-0.5,-0.5,-0.5).applyMatrix4(matrix),//bottom
+    ];
+    geom.faces = [
+      new THREE.Face4(0,3,4,2),//12     
+      new THREE.Face4(0,2,6,1),//8
+      new THREE.Face4(0,1,5,3),//4
+      
+      new THREE.Face4(1,9,11,5),//5
+      new THREE.Face4(2,8,12,6),//9
+      new THREE.Face4(3,7,10,4),//1
+      new THREE.Face4(4,10,8,2),//11
+      new THREE.Face4(5,11,7,3),//3
+      new THREE.Face4(6,12,9,1),//7
+      
+      new THREE.Face4(13,10,7,11),//2
+      new THREE.Face4(13,11,9,12),//6
+      new THREE.Face4(13,12,8,10),//10
+    ];
+    geom.computeFaceNormals();
+    app.cellMeshes.meshes.clickMesh.mesh = geom;
   },
 };
 
